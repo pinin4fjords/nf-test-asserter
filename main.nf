@@ -56,14 +56,21 @@ process ASSERT_SNAPSHOT {
 
     cd pipeline
 
-    # Pass `-resume <sessionId> -work-dir <phase1 workDir>` through to the inner
-    # `nextflow run` that nf-test invokes, so the pipeline cache-hits every task
-    # against phase-1's cache and does not submit real work.
+    # nf-test's pass-through Nextflow options come from `options "..."` in
+    # nf-test.config (NOT a CLI flag). Inject ours before the closing brace
+    # of the existing top-level `config { ... }` block.
+    awk -v line="    options \\"-resume ${session_id} -work-dir ${workdir_uri}\\"" '
+        /^config[[:space:]]*\\{/ { in_block=1 }
+        in_block && /^\\}/ { print line; in_block=0 }
+        { print }
+    ' nf-test.config > nf-test.config.asserter
+    cp nf-test.config nf-test.config.bak
+    mv nf-test.config.asserter nf-test.config
+
     nf-test test '${test_file}' \\
         --update-snapshot \\
         --profile=+${test_profile} \\
         --verbose \\
-        --options="-resume ${session_id} -work-dir ${workdir_uri}" \\
         > ../asserter.log 2>&1 || true
 
     cd ..
