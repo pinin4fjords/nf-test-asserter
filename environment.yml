@@ -1,0 +1,13 @@
+name: nf-test-asserter
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - openjdk=17
+  - nextflow=25.10.4
+  - nf-test=0.9.5
+  - git
+  - bash
+  - coreutils
+  - findutils
+  - ca-certificates

@@ -1,0 +1,4 @@
+.nextflow*
+work/
+.nf-test/
+*.log
