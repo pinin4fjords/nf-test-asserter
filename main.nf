@@ -34,6 +34,7 @@ process ASSERT_SNAPSHOT {
     publishDir params.outdir, mode: 'copy'
 
     input:
+    path patched_jar
     val pipeline_repo
     val pipeline_rev
     val test_file
@@ -67,7 +68,9 @@ process ASSERT_SNAPSHOT {
     cp nf-test.config nf-test.config.bak
     mv nf-test.config.asserter nf-test.config
 
-    nf-test test '${test_file}' \\
+    # Patched nf-test jar (dedupes -w so the inner nextflow gets our single -w).
+    # Staged into the task work dir by Nextflow from \$projectDir/bin/.
+    java -jar ../${patched_jar.name} test '${test_file}' \\
         --update-snapshot \\
         --profile=+${test_profile} \\
         --verbose \\
@@ -86,7 +89,9 @@ workflow {
             || !params.outdir_uri || !params.workdir_uri || !params.session_id || !params.outdir) {
         error "Missing required params. See main.nf header for the full list."
     }
+    patched_jar = file("${projectDir}/bin/nf-test-patched.jar", checkIfExists: true)
     ASSERT_SNAPSHOT(
+        patched_jar,
         params.pipeline_repo,
         params.pipeline_rev,
         params.test_file,
